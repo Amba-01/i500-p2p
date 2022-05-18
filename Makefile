@@ -1,0 +1,1 @@
+all: test vet fmt lint build
