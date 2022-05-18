@@ -97,7 +97,10 @@ func Run() {
 
 	// libp2p.New constructs a new libp2p Host. Other options can be added
 	// here.
-	host, err := libp2p.New(libp2p.ListenAddrs([]multiaddr.Multiaddr(config.ListenAddresses)...))
+	host, err := libp2p.New(
+		libp2p.ListenAddrs([]multiaddr.Multiaddr(config.ListenAddresses)...),
+		libp2p.NATPortMap(),
+	)
 	if err != nil {
 		panic(err)
 	}
