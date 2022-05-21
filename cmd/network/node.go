@@ -3,27 +3,23 @@ package node
 import (
 	"context"
 	"fmt"
-	"io"
 	mrand "math/rand"
 	"os"
 	"os/signal"
 	"strings"
-	"sync"
 	"syscall"
 
 	"github.com/i500-p2p/config"
 	cfg "github.com/i500-p2p/config"
 	"github.com/libp2p/go-libp2p"
-	//connmgr "github.com/libp2p/go-libp2p-connmgr"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/network"
-	"github.com/libp2p/go-libp2p-core/peer"
+	pRouting "github.com/libp2p/go-libp2p-core/routing"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	tls "github.com/libp2p/go-libp2p-tls"
 	"github.com/libp2p/go-libp2p/p2p/discovery/routing"
 	dutil "github.com/libp2p/go-libp2p/p2p/discovery/util"
-	//"github.com/libp2p/go-libp2p/p2p/net/connmgr"
 	"github.com/libp2p/go-tcp-transport"
 	"github.com/multiformats/go-multiaddr"
 	log "github.com/sirupsen/logrus"
@@ -64,16 +60,25 @@ func Run() {
 }
 
 func NewNode(ctx context.Context, config config.Config) (*Node, error) {
-	var r io.Reader
 
-	r = mrand.New(mrand.NewSource(config.Seed))
+	privateKey, _, err := crypto.GenerateKeyPairWithReader(
+		crypto.RSA,
+		2048,
+		mrand.New(mrand.NewSource(config.Seed)),
+	)
 
-	privateKey, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, r)
 	if err != nil {
 		return nil, err
 	}
 
 	tlsTransport, err := tls.New(privateKey)
+
+	var kadDHT *dht.IpfsDHT
+	// Set up a routing configuration with the KadDHT
+	PeerRouter := libp2p.Routing(func(h host.Host) (pRouting.PeerRouting, error) {
+		kadDHT = setupKadDHT(ctx, h)
+		return kadDHT, err
+	})
 
 	addr, _ := multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/0.0.0.0/tcp/%d", config.Port))
 	p2pHost, err := libp2p.New(
@@ -82,9 +87,9 @@ func NewNode(ctx context.Context, config config.Config) (*Node, error) {
 		libp2p.NATPortMap(),
 		libp2p.EnableAutoRelay(),
 		libp2p.Security(tls.ID, tlsTransport),
-		libp2p.DefaultMuxers,
 		libp2p.Transport(tcp.NewTCPTransport),
-		//libp2p.ConnectionManager(connmgr.NewConnManager(100, 400, time.Minute)),
+		PeerRouter,
+		libp2p.DefaultMuxers,
 	)
 
 	if err != nil {
@@ -98,21 +103,22 @@ func NewNode(ctx context.Context, config config.Config) (*Node, error) {
 		fmt.Println()
 	}
 	log.Println("###########")
+
 	//#########################################
-	kadDHT, err := dht.New(ctx, p2pHost)
-	if err != nil {
-		panic(err)
-	}
+	/*	kadDHT, err := dht.New(ctx, p2pHost)
+		if err != nil {
+			panic(err)
+		}*/
 
 	// Bootstrap the DHT. In the default configuration, this spawns a Background
 	// thread that will refresh the peer table every five minutes.
 	log.Println("bootstrapping the DHT")
-	if err = kadDHT.Bootstrap(ctx); err != nil {
+	/*	if err = kadDHT.Bootstrap(ctx); err != nil {
 		return nil, err
-	}
+	}*/
 	// Let's connect to the bootstrap nodes first. They will tell us about the
 	// other nodes in the network.
-	var wg sync.WaitGroup
+	/*var wg sync.WaitGroup
 	for _, peerAddr := range config.BootstrapPeers {
 		peerInfo, _ := peer.AddrInfoFromP2pAddr(peerAddr)
 		wg.Add(1)
@@ -125,7 +131,7 @@ func NewNode(ctx context.Context, config config.Config) (*Node, error) {
 			}
 		}()
 	}
-	wg.Wait()
+	wg.Wait()*/
 	return &Node{KadDHT: kadDHT, Host: p2pHost}, nil
 }
 
@@ -173,4 +179,24 @@ func (node Node) AdvertiseAndFindPeers(ctx context.Context, cfg config.Config) {
 
 		}
 	}
+}
+
+func setupKadDHT(ctx context.Context, p2pHost host.Host) *dht.IpfsDHT {
+	// Create DHT server mode option
+	dhtMode := dht.Mode(dht.ModeServer)
+	// Retrieve the list of boostrap peer addresses
+	bootstrapPeers := dht.GetDefaultBootstrapPeerAddrInfos()
+	// Create the DHT bootstrap peers option
+	dhtPeers := dht.BootstrapPeers(bootstrapPeers...)
+
+	// Trace log
+	log.Traceln("Generated DHT Configuration.")
+
+	// Start a Kademlia DHT on the host in server mode
+	kadDHT, err := dht.New(ctx, p2pHost, dhtMode, dhtPeers)
+	// Handle any potential error
+	if err != nil {
+		log.Fatalln("Failed to Create the Kademlia DHT!")
+	}
+	return kadDHT
 }
