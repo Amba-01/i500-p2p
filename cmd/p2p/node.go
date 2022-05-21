@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
+	"flag"
 	"sync"
 	"time"
 
@@ -41,11 +42,25 @@ type Node struct {
 }
 
 func Run() {
+	// Define input flags
+	username := flag.String("user", "", "username to use in the chatroom.")
+	chatroom := flag.String("room", "", "chatroom to join.")
+	flag.Parse()
+
 	p2pHost := NewNode()
 
 	p2pHost.AdvertiseConnect()
 
-	select {}
+	chatapp, _ := JoinChatRoom(p2pHost, *username, *chatroom)
+	log.Infof("Joined the '%s' chatroom as '%s'", chatapp.RoomName, chatapp.UserName)
+
+	// Wait for network setup to complete
+	time.Sleep(time.Second * 5)
+
+	// Create the Chat UI
+	ui := NewUI(chatapp)
+	// Start the UI system
+	ui.RunUI()
 }
 
 func NewNode() *Node {
