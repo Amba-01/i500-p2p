@@ -10,10 +10,12 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/i500-p2p/config"
 	cfg "github.com/i500-p2p/config"
 	"github.com/libp2p/go-libp2p"
+	connmgr "github.com/libp2p/go-libp2p-connmgr"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/network"
@@ -22,6 +24,7 @@ import (
 	tls "github.com/libp2p/go-libp2p-tls"
 	"github.com/libp2p/go-libp2p/p2p/discovery/routing"
 	dutil "github.com/libp2p/go-libp2p/p2p/discovery/util"
+	//"github.com/libp2p/go-libp2p/p2p/net/connmgr"
 	"github.com/libp2p/go-tcp-transport"
 	"github.com/multiformats/go-multiaddr"
 	log "github.com/sirupsen/logrus"
@@ -78,10 +81,11 @@ func NewNode(ctx context.Context, config config.Config) (*Node, error) {
 		libp2p.ListenAddrs(addr),
 		libp2p.Identity(privateKey),
 		libp2p.NATPortMap(),
-		libp2p.EnableRelay(),
+		libp2p.EnableAutoRelay(),
 		libp2p.Security(tls.ID, tlsTransport),
 		libp2p.DefaultMuxers,
 		libp2p.Transport(tcp.NewTCPTransport),
+		libp2p.ConnectionManager(connmgr.NewConnManager(100, 400, time.Minute)),
 	)
 
 	if err != nil {
