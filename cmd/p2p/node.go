@@ -15,11 +15,12 @@ import (
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/routing"
-	discovery "github.com/libp2p/go-libp2p-discovery"
 	dht "github.com/libp2p/go-libp2p-kad-dht"
 	pubsub "github.com/libp2p/go-libp2p-pubsub"
 	tls "github.com/libp2p/go-libp2p-tls"
 	yamux "github.com/libp2p/go-libp2p-yamux"
+	//discovery "github.com/libp2p/go-libp2p-discovery"
+	discovery "github.com/libp2p/go-libp2p/p2p/discovery/routing"
 	"github.com/libp2p/go-tcp-transport"
 	"github.com/mr-tron/base58"
 	"github.com/multiformats/go-multiaddr"
@@ -152,7 +153,7 @@ func bootstrapDHT(ctx context.Context, p2pHost host.Host, kadDHT *dht.IpfsDHT) {
 		log.Fatalln("Failed to Bootstrap the Kademlia!")
 	}
 
-	log.Traceln("Set the Kademlia DHT into Bootstrap Mode.")
+	log.Info("Set the Kademlia DHT into Bootstrap Mode.")
 
 	var wg sync.WaitGroup
 	var connectedBootstrapPeers int
@@ -175,7 +176,7 @@ func bootstrapDHT(ctx context.Context, p2pHost host.Host, kadDHT *dht.IpfsDHT) {
 
 	wg.Wait()
 
-	log.Debugf("Connected to %d out of %d Bootstrap Peers.", connectedBootstrapPeers, totalBootstrapPeers)
+	log.Info("Connected to %d out of %d Bootstrap Peers.", connectedBootstrapPeers, totalBootstrapPeers)
 }
 
 func (p2p *Node) AdvertiseConnect() {
