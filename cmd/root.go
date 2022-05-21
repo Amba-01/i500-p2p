@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/i500-p2p/cmd/p2p"
+	net "github.com/i500-p2p/cmd/network"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -22,7 +22,7 @@ var rootCmd = &cobra.Command{
 
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		p2p.Run()
+		net.Run()
 	},
 }
 
