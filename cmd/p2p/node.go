@@ -211,7 +211,7 @@ func handlePeerDiscovery(p2pHost host.Host, peerChan <-chan peer.AddrInfo) {
 			continue
 		}
 		if err := p2pHost.Connect(context.Background(), p); err != nil {
-			log.Fatalln(err)
+			log.Fatalln("failed to connect to", p.ID, p.Addrs, err)
 		}
 		log.Info("Successfully connected to peer", p.Addrs)
 	}
