@@ -10,12 +10,11 @@ import (
 	"strings"
 	"sync"
 	"syscall"
-	"time"
 
 	"github.com/i500-p2p/config"
 	cfg "github.com/i500-p2p/config"
 	"github.com/libp2p/go-libp2p"
-	connmgr "github.com/libp2p/go-libp2p-connmgr"
+	//connmgr "github.com/libp2p/go-libp2p-connmgr"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/network"
@@ -85,7 +84,7 @@ func NewNode(ctx context.Context, config config.Config) (*Node, error) {
 		libp2p.Security(tls.ID, tlsTransport),
 		libp2p.DefaultMuxers,
 		libp2p.Transport(tcp.NewTCPTransport),
-		libp2p.ConnectionManager(connmgr.NewConnManager(100, 400, time.Minute)),
+		//libp2p.ConnectionManager(connmgr.NewConnManager(100, 400, time.Minute)),
 	)
 
 	if err != nil {
