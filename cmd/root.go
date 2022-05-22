@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	net "github.com/i500-p2p/cmd/network"
+	net "github.com/i500-p2p/cmd/p2p"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
